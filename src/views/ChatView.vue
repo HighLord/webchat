@@ -7,6 +7,7 @@ const route = useRoute();
 const recipient = ref( route.params.username )
 const messages = ref < { sender: string; message: string }[] > ( [] );
 const messageInput = ref( '' );
+const username = ref( '' );
 const websocketStore = useWebSocketStore();
 
 const fetchMessages = () =>
