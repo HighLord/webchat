@@ -1,57 +1,78 @@
-<script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useWebSocketStore } from '@/stores/websocket';
 
-const router = useRouter()
-const onlineUsers = ref( [] )
-const selectedUser = ref( '' )
-const ws = new WebSocket( 'wss://github.webapps.com.ng/chat-server' )
+const onlineUsers = ref<{ name: string; isOnline: boolean }[]>( [] );
+const router = useRouter();
+const searchUser = ref( '' );
 
-ws.onmessage = ( event ) =>
+const username = localStorage.getItem( 'username' ) || '';
+const isOnline = localStorage.getItem( 'isOnline' ) === 'true';
+
+const websocketStore = useWebSocketStore();
+
+const fetchOnlineUsers = () =>
 {
-    const data = JSON.parse( event.data )
-
-    if ( Array.isArray( data ) )
+    if ( websocketStore.isConnected )
     {
-        // If received data is a list, update onlineUsers
-        onlineUsers.value = data
+        websocketStore.sendMessage( { type: 'list' } );
+    } else
+    {
+        console.error( 'WebSocket is not connected.' );
     }
-}
+};
 
 onMounted( () =>
 {
-    ws.onopen = () =>
-    {
-        ws.send( JSON.stringify( { type: 'list' } ) )  // Request the list
-    }
-} )
+    websocketStore.connect();
+    fetchOnlineUsers();
+} );
 
-const startChat = ( user ) =>
+onUnmounted( () =>
 {
-    router.push( `/chat/${user}` )
-}
+    websocketStore.disconnect();
+} );
+
+websocketStore.addMessageListener( ( data ) =>
+{
+    if ( data.type === 'list' )
+    {
+        onlineUsers.value = data.users;
+    }
+} );
+
+const startChat = ( user: string ) =>
+{
+    router.push( `/chat/${user}` );
+};
 </script>
 
 <template>
     <div class="container">
         <div id="container">
             <h2>Online Users</h2>
-
             <ul>
-                <li v-for=" user in onlineUsers " :key="user.name" @click="startChat( user.name )">
-                    {{ user.name }} <span v-if=" !user.isOnline ">(Hidden)</span>
+                <li v-for=" user in onlineUsers " :key="user.name" @click="startChat( user.name )"
+                    :class="{ online: user.isOnline }">
+                    {{ user.name }}
+                    <span v-if=" user.isOnline ">(Online)</span>
                 </li>
             </ul>
-
             <div id="end">
-            <input v-model="selectedUser" type="text" placeholder="Enter hidden user" />
-            <button @click="startChat( selectedUser )">Chat</button>
+                <h3>Search for Hidden Users</h3>
+                <input v-model="searchUser" type="text" placeholder="Enter hidden username" />
+                <button @click="startChat( searchUser )">Chat</button>
             </div>
         </div>
     </div>
 </template>
 
 <style scoped>
+.online {
+    color: green;
+}
+
 .container {
     height: 98vh;
 }

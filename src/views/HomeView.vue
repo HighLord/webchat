@@ -1,20 +1,31 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router'
+import { useWebSocketStore } from '@/stores/websocket';
 
 const router = useRouter()
 const username = ref( '' )
 const showOnline = ref( true )
+const websocketStore = useWebSocketStore();
 
 const submitUser = () =>
 {
   if ( username.value.trim() )
   {
-    localStorage.setItem( 'username', username.value )
-    localStorage.setItem( 'isOnline', showOnline.value )
+    websocketStore.sendMessage( {
+      type: 'identify',
+      username: username.value,
+      status: showOnline.value ? 'online' : 'hidden',
+    } );
+
     router.push( '/online-users' )
   }
-}
+};
+
+onMounted( () =>
+{
+  websocketStore.connect();
+} );
 </script>
 
 <template>

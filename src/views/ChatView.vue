@@ -1,50 +1,52 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, onMounted, onUnmounted } from 'vue';
+import { useRoute } from 'vue-router';
+import { useWebSocketStore } from '@/stores/websocket';
 
-const route = useRoute()
-const username = localStorage.getItem( 'username' )
+const route = useRoute();
 const recipient = ref( route.params.username )
-const messages = ref( [] )
-const messageInput = ref( '' )
-let ws
+const messages = ref < { sender: string; message: string }[] > ( [] );
+const messageInput = ref( '' );
+const websocketStore = useWebSocketStore();
+
+const fetchMessages = () =>
+{
+    // Implement a function to fetch previous messages if needed
+};
 
 onMounted( () =>
 {
-    ws = new WebSocket( "wss://github.webapps.com.ng/chat-server" )
+    websocketStore.connect();
+    fetchMessages();
+} );
 
-    ws.onopen = () =>
-    {
-        console.log( "Connected to WebSocket" )
-        ws.send( JSON.stringify( {
-            type: "identify",
-            username: username.value,
-            username: username.value,
-            status: localStorage.getItem( 'isOnline') ? 'online' : 'hidden'
-        } ) )
-    }
+onUnmounted( () =>
+{
+    websocketStore.disconnect();
+} );
 
-    ws.onmessage = ( event ) =>
+websocketStore.addMessageListener( ( data ) =>
+{
+    if ( data.sender === recipient.value || data.sender === username )
     {
-        const data = JSON.parse( event.data )
-        messages.value.push( { sender: data.sender, message: data.message } )
+        messages.value.push( { sender: data.sender, message: data.message } );
     }
-} )
+} );
 
 const sendMessage = () =>
 {
-    if ( !messageInput.value.trim() ) return
+    if ( !messageInput.value.trim() ) return;
 
     const data = {
         sender: username,
         recipient: recipient.value,
-        message: messageInput.value
-    }
+        message: messageInput.value,
+    };
 
-    ws.send( JSON.stringify( data ) )
-    messages.value.push( { sender: username, message: messageInput.value } )
-    messageInput.value = ''
-}
+    websocketStore.sendMessage( data );
+    messages.value.push( { sender: username, message: messageInput.value } );
+    messageInput.value = '';
+};
 </script>
 
 <template>
