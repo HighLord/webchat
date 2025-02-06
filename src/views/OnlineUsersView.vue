@@ -32,7 +32,7 @@ onMounted( () =>
 
 onUnmounted( () =>
 {
-    websocketStore.disconnect();
+    //websocketStore.disconnect();
 } );
 
 websocketStore.addMessageListener( ( data ) =>
