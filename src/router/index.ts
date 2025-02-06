@@ -6,7 +6,7 @@ import ChatView from '../views/ChatView.vue'
 
 const routes = [
   { path: '/', component: HomeView },
-  { path: '/online-users', component: OnlineUsersView },
+  { path: '/online-users/', component: OnlineUsersView },
   { path: '/chat/:username', component: ChatView, props: true }
 ]
 
