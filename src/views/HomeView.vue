@@ -27,12 +27,15 @@ const submitUser = () =>
 };
 onMounted( () =>
 {
-	websocketStore.connect();
 	if ( !websocketStore.isConnected )
 	{
 		fetch( 'https://github.webapps.com.ng/websocket/chat/start-chat-server.php' )
 			.then( response => response.text() )
-			.then( data => console.log( data ) )  // Log the server response
+			.then( data =>
+			{
+				console.log( data );
+				websocketStore.connect();
+			} )  // Log the server response
 			.catch( error => console.error( 'Failed to start WebSocket server:', error ) );
 	}
 } );
